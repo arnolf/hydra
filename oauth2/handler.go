@@ -284,8 +284,8 @@ func (h *Handler) WellKnownHandler(w http.ResponseWriter, r *http.Request) {
 //       500: jsonError
 func (h *Handler) UserinfoHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	session := NewSessionWithCustomClaims("", h.c.AllowedTopLevelClaims(r.Context()))
-	tokenType, ar, err := h.r.OAuth2Provider().IntrospectToken(r.Context(), fosite.AccessTokenFromRequest(r), fosite.AccessToken, session)
+	session := NewSessionWithCustomClaims("", h.c.AllowedTopLevelClaims(ctx))
+	tokenType, ar, err := h.r.OAuth2Provider().IntrospectToken(ctx, fosite.AccessTokenFromRequest(r), fosite.AccessToken, session)
 	if err != nil {
 		rfcerr := fosite.ErrorToRFC6749Error(err)
 		if rfcerr.StatusCode() == http.StatusUnauthorized {
@@ -495,7 +495,7 @@ func (h *Handler) IntrospectHandler(w http.ResponseWriter, r *http.Request, _ ht
 		Username:          session.GetUsername(),
 		Extra:             session.Extra,
 		Audience:          audience,
-		Issuer:            strings.TrimRight(h.c.IssuerURL(r.Context()).String(), "/") + "/",
+		Issuer:            strings.TrimRight(h.c.IssuerURL(ctx).String(), "/") + "/",
 		ObfuscatedSubject: obfuscated,
 		TokenType:         resp.GetAccessTokenType(),
 		TokenUse:          string(resp.GetTokenUse()),
@@ -582,7 +582,6 @@ func (h *Handler) TokenHandler(w http.ResponseWriter, r *http.Request) {
 	var ctx = r.Context()
 
 	accessRequest, err := h.r.OAuth2Provider().NewAccessRequest(ctx, r, session)
-
 	if err != nil {
 		h.logOrAudit(err, r)
 		h.r.OAuth2Provider().WriteAccessError(ctx, w, accessRequest, err)
